@@ -487,8 +487,10 @@ PLR_useCheck(short snum,int x,int y,int z,short sector,short ang)
      if (nearwall != -1) {         // using a wall
           EFF_operateWall(nearwall);
      }
-     if (!EFF_operatableSector(nearsector)) {
-          if (EFF_operatableSector(sector)) {
+     // nothing near (-1) is not a sector: the DOS game read sectorPtr[-1]
+     // and got away with it, the port crashed (MiSTer, 2026-11-18)
+     if (nearsector == -1 || !EFF_operatableSector(nearsector)) {
+          if (sector != -1 && EFF_operatableSector(sector)) {
                nearsector=sector;
           }
      }

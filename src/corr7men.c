@@ -304,6 +304,22 @@ struct menuOption mouseNamesArr[NUMMOUSEOPTIONS]={
      {1,MENUOPTION_LEFTJUST,"PREVIOUS MENU",0,0,0,0,FONT_BIGFONT}
 },*mouseNames[NUMMOUSEOPTIONS];
 
+// MiSTer (2026-11-18): the Joystick Options page, which the prototype left
+// as a stub; its one setting is kept in corr7.ini (readcfg.c)
+enum {
+     JMENU_INVERTLOOK,
+     JMENU_EXIT,
+     NUMJOYSTICKOPTIONS
+};
+
+int  curJoystick;
+extern int c8_invertlook;
+
+struct menuOption joystickNamesArr[NUMJOYSTICKOPTIONS]={
+     {1,MENUOPTION_BOOLEAN,"INVERT LOOK",0,0,0,0,FONT_BIGFONT},
+     {1,MENUOPTION_LEFTJUST,"PREVIOUS MENU",0,0,0,0,FONT_BIGFONT}
+},*joystickNames[NUMJOYSTICKOPTIONS];
+
 #if 0
 char soundCardName[9][30];
 
@@ -409,6 +425,9 @@ MEN_initMenus(void)
      }
      for (i=0 ; i < NUMMOUSEOPTIONS ; i++) {
           mouseNames[i]=&mouseNamesArr[i];
+     }
+     for (i=0 ; i < NUMJOYSTICKOPTIONS ; i++) {
+          joystickNames[i]=&joystickNamesArr[i];
      }
      for (i=0 ; i < NUMSOUNDOPTIONS ; i++) {
           soundNames[i]=&soundNamesArr[i];
@@ -851,6 +870,19 @@ MEN_soundOptions(void)
      return(r);
 }
 
+// the name of a key code for the Keyboard Config page: keystrings[] has 90
+// entries, the codes the port returns (and 255 for an action without a key)
+// go further (MiSTer, 2026-11-17)
+static const char *
+MEN_keyName(int code)
+{
+     static const int n = sizeof(keystrings) / sizeof(keystrings[0]);
+     code &= 0x7F;
+     if (code < 0 || code >= n || keystrings[code] == NULL)
+          return "";
+     return keystrings[code];
+}
+
 int
 MEN_keyboardConfiguration(void)
 {
@@ -860,7 +892,7 @@ MEN_keyboardConfiguration(void)
 
      for (i=0 ; i < MAXACTIONS ; i++) {
           sprintf(actionName[i],"%s %-6s",
-                  controlArray[i].desc,keystrings[keys[i]&0x7F]);
+                  controlArray[i].desc,MEN_keyName(keys[i]));
           keyboardNames[i]->misc1=keys[i];
      }
      r=1;
@@ -876,7 +908,7 @@ MEN_keyboardConfiguration(void)
                                     "PRESS A KEY",keyboardNames);
                }
                sprintf(actionName[curKeyboard],"%s %-6s",
-                       controlArray[curKeyboard].desc,keystrings[i&0x7F]);
+                       controlArray[curKeyboard].desc,MEN_keyName(i));
                keyboardNames[curKeyboard]->misc1=i;
           }
      }
@@ -992,6 +1024,32 @@ MEN_mouseOptions(void)
 }
 
 int
+MEN_joystickOptions(void)
+{
+     int  pic=0,
+          r=1;
+
+     joystickNames[JMENU_INVERTLOOK]->misc1=c8_invertlook;
+     while (r) {
+          pic=menuBackgroundPic;
+          r=MEN_doMenu(&curJoystick,NUMJOYSTICKOPTIONS,pic,
+                       "JOYSTICK OPTIONS",joystickNames);
+          if (r) {
+               switch (curJoystick) {
+               case JMENU_INVERTLOOK:
+                    joystickNames[curJoystick]->misc1^=1;
+                    break;
+               case JMENU_EXIT:
+                    r=0;
+                    break;
+               }
+          }
+     }
+     c8_invertlook=joystickNames[JMENU_INVERTLOOK]->misc1;
+     return(r);
+}
+
+int
 MEN_controllerOptions(void)
 {
      int  pic=0,
@@ -1010,7 +1068,7 @@ MEN_controllerOptions(void)
                     MEN_mouseOptions();
                     break;
                case CMENU_JOYSTICKS:
-//                    MEN_joystickControllers();
+                    MEN_joystickOptions();
                     break;
                case CMENU_VRHEADSETS:
 //                    MEN_vrHeadsetControllers();

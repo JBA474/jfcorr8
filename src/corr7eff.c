@@ -912,6 +912,9 @@ EFF_isElevator(short s)
 int
 EFF_operatableSector(short s)
 {
+     if (s < 0 || s >= numsectors) {   // -1 from neartag(): not a sector (MiSTer)
+          return(0);
+     }
      if (EFF_isDoor(s) || EFF_isElevator(s)) {
           return(1);
      }

@@ -37,6 +37,10 @@ for f in glob.glob(t + '/src/*.[ch]') + glob.glob(t + '/src/*.def'):
 PY
 python3 "$S/tier2/c8/port_c8.py" $T || exit 1
 python3 "$S/tier2/patch_cheats.py" $T jfcorr8 || exit 1
+python3 "$S/tier2/patch_c8menu.py" $T || exit 1
+python3 "$S/tier2/patch_c8joy.py" $T || exit 1
+python3 "$S/tier2/patch_c8crash.py" $T || exit 1
+python3 "$S/tier2/patch_c8use.py" $T || exit 1
 # CMake: the Witchaven list with the game's modules in place of Witchaven's
 python3 - $T <<'PY'
 import os, sys, re
@@ -50,7 +54,7 @@ open(os.path.join(t, 'CMakeLists.txt'), 'w').write(s)
 print('modules:', len(mods))
 PY
 R=~/ionfury/EDuke32_MiSTer; PREFIX=$R/build/sdl/mister/prefix
-BT=Release; CF=""; [ -n "$C8DEBUG" ] && { BT=Debug; CF="-O0 -fno-omit-frame-pointer -funwind-tables -g"; }
+BT=Release; CF="-funwind-tables -fno-omit-frame-pointer"; [ -n "$C8DEBUG" ] && { BT=Debug; CF="-O0 -fno-omit-frame-pointer -funwind-tables -g"; }
 cmake -S $T -B $T/build -DCMAKE_BUILD_TYPE=$BT "-DCMAKE_C_FLAGS=$CF" -DCMAKE_TOOLCHAIN_FILE=$R/hybrid/toolchain/mister.cmake -DCMAKE_FIND_ROOT_PATH=$PREFIX -DCMAKE_PREFIX_PATH=$PREFIX -DMISTER_HYBRID=ON "-DCMAKE_EXE_LINKER_FLAGS=-no-pie -static-libgcc" > $T/cmake.log 2>&1 || { tail -5 $T/cmake.log; exit 1; }
 cmake --build $T/build -j"$(nproc)" -- -k > $T/build.log 2>&1
 echo "== errors per file"; grep -o "src/[a-z0-9_]*\.[ch]:[0-9]*:[0-9]*: error" $T/build.log | cut -d: -f1 | sort | uniq -c | sort -rn

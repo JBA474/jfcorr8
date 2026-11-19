@@ -61,11 +61,17 @@ dr = ImageDraw.Draw(bar)
 from PIL import ImageFont
 try: f9 = ImageFont.truetype('C:/Windows/Fonts/consolab.ttf', 9); f7 = ImageFont.truetype('C:/Windows/Fonts/consola.ttf', 7)
 except Exception: f9 = f7 = ImageFont.load_default()
-for x in (62, 128, 174, 236, 298): dr.line((x, 2, x, 29), fill=(28, 30, 36)); dr.line((x + 1, 2, x + 1, 29), fill=(96, 100, 110))
+# The game draws three numbers on the bar (corr7plr.c PLR_updateStatus*): 14x16 digits centred
+# on y 180 (bar line 12, so lines 4..20), the string centred on x 23 (ammo), 73 (health) and 123
+# (aliens left). Cells of 50 pixels around those centres, the label under each number; the
+# right part of the bar is a plain panel. (2026-11-17: the first bar's labels did not line up.)
+for x in (48, 98, 148): dr.line((x, 2, x, 29), fill=(28, 30, 36)); dr.line((x + 1, 2, x + 1, 29), fill=(96, 100, 110))
 dr.rectangle((0, 0, 319, 31), outline=(110, 114, 124))
-for txt, x in (('AMMO', 14), ('HEALTH', 70), ('FRAG', 137), ('ARMOR', 250)): dr.text((x, 21), txt, font=f9, fill=(220, 220, 230))
-for i, txt in enumerate(('BULL', 'SHEL', 'ROCK', 'CELL')): dr.text((301, 2 + i * 7), txt, font=f7, fill=(200, 200, 210))
-dr.rectangle((176, 2, 234, 29), fill=(10, 10, 14))
+for txt, cx in (('AMMO', 23), ('HEALTH', 73), ('ALIENS', 123)):
+    w = dr.textlength(txt, font=f9); dr.text((cx - w / 2, 21), txt, font=f9, fill=(220, 220, 230))
+for cx in (23, 73, 123): dr.rectangle((cx - 22, 3, cx + 22, 20), fill=(10, 10, 14))
+w = dr.textlength('CORRIDOR 8', font=f9); dr.text((234 - w / 2, 7), 'CORRIDOR 8', font=f9, fill=(150, 154, 166))
+w = dr.textlength('GALACTIC WARS', font=f7); dr.text((234 - w / 2, 19), 'GALACTIC WARS', font=f7, fill=(120, 124, 136))
 put_img(3830, quant(bar))
 bg = Image.new('RGB', (320, 200), (0, 0, 0)); px = bg.load(); random.seed(8)
 for y in range(200):

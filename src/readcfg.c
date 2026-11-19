@@ -181,6 +181,37 @@ readHMICFGFile(PSTR szName,PSTR szDIGIName,PSTR szMIDIName)
      return(_TRUE);
 }
 
+// MiSTer (2026-11-18): the pad's settings, [MISTER] in corr7.ini
+int c8_invertlook = 0;
+
+void
+readMiSTerConfig(_INI_INSTANCE *sInstance)
+{
+     if (!hmiINILocateSection(sInstance,"MISTER")) {
+          return;
+     }
+     if (hmiINIGetItemString(sInstance,"INVERT LOOK",tempBuf,16)) {
+          if (strlen(tempBuf) > 0) {
+               c8_invertlook=atoi(tempBuf) != 0;
+          }
+     }
+}
+
+void
+writeMiSTerConfig(_INI_INSTANCE *sInstance)
+{
+     if (!hmiINILocateSection(sInstance,"MISTER")) {
+          hmiINIAddSection(sInstance,"MISTER");
+     }
+     if (!hmiINILocateItem(sInstance,"INVERT LOOK")) {
+          hmiINIAddItemDecimal(sInstance,"INVERT LOOK",(WORD)c8_invertlook,
+                               strlen("INVERT LOOK")+4,16);
+     }
+     else {
+          hmiINIWriteDecimal(sInstance,(WORD)c8_invertlook);
+     }
+}
+
 void
 readKeyboardConfig(_INI_INSTANCE *sInstance)
 {
@@ -575,6 +606,7 @@ readControlConfigs(int readhmi)
      }
      controlAction[i]=NULL;
      readKeyboardConfig(&sInstance);
+     readMiSTerConfig(&sInstance);
 #ifdef CON_MOUSE
      readMouseConfig(&sInstance);
 #endif
@@ -613,6 +645,7 @@ writeControlConfigs(void)
           }
      }
      writeKeyboardConfig(&sInstance);
+     writeMiSTerConfig(&sInstance);
 #ifdef CON_MOUSE
      writeMouseConfig(&sInstance);
 #endif

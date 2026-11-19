@@ -29,6 +29,33 @@ __attribute__((weak)) const int appicon_bmp_size = 0;
 
 void c8_misterinit(void) { }
 
+// A crash reports itself to the log (the MiSTer writes no core file):
+// the signal and the raw backtrace, to symbolize with addr2line against
+// the unstripped build (non-PIE, so the addresses are the binary's).
+#include <signal.h>
+#include <execinfo.h>
+#include <unistd.h>
+static void c8_crashreport(int sig) {
+    void *frames[40];
+    char line[64];
+    int n = backtrace(frames, 40), i, len;
+    len = snprintf(line, sizeof line, "c8 crash: signal %d, backtrace:\n", sig);
+    write(1, line, len);
+    for (i = 0; i < n; i++) {
+        len = snprintf(line, sizeof line, "  %p\n", frames[i]);
+        write(1, line, len);
+    }
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+__attribute__((constructor)) static void c8_crashreport_init(void) {
+    signal(SIGSEGV, c8_crashreport);
+    signal(SIGBUS, c8_crashreport);
+    signal(SIGILL, c8_crashreport);
+    signal(SIGFPE, c8_crashreport);
+    signal(SIGABRT, c8_crashreport);
+}
+
 void keytimerstuff(void) { }
 
 
@@ -38,6 +65,7 @@ void keytimerstuff(void) { }
 // and Start are already the arrow keys, Enter and Escape there. Buttons:
 // R fire, B jump, A use, L run, Y crouch, X strafe, Select map. Sticks:
 // left moves and strafes, right turns and looks, as keys past a quarter.
+extern int c8_invertlook; // readcfg.c, [MISTER] INVERT LOOK
 static void c8_padkeys(void) {
     static const struct { int bit, key; } buttons[] = {
         { 2, KEYFIRE }, { 3, KEYJUMP }, { 4, KEYUSE }, { 5, KEYRUN },
@@ -63,7 +91,9 @@ static void c8_padkeys(void) {
         }
     }
     for (k = 0; k < (int)(sizeof sticks / sizeof sticks[0]); k++) {
-        int v = joynumaxes > sticks[k].axis ? joyaxis[sticks[k].axis] * sticks[k].sign : 0;
+        int sign = sticks[k].sign;
+        if (sticks[k].axis == 3 && c8_invertlook) sign = -sign; // Joystick Options: INVERT LOOK
+        int v = joynumaxes > sticks[k].axis ? joyaxis[sticks[k].axis] * sign : 0;
         int down = v > 8192;
         if (down != stickdown[k]) {
             keystatus[(unsigned char)keys[sticks[k].key]] = down;
