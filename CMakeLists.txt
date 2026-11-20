@@ -74,6 +74,7 @@ add_executable(jfcorr8
 	src/corr7tmr.c
 	src/corr7wep.c
 	src/mister_port.c
+	src/mister_crash.c
 	src/profile.c
 	src/readcfg.c
 	src/sosemu.c

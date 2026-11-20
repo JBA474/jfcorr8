@@ -41,6 +41,7 @@ python3 "$S/tier2/patch_c8menu.py" $T || exit 1
 python3 "$S/tier2/patch_c8joy.py" $T || exit 1
 python3 "$S/tier2/patch_c8crash.py" $T || exit 1
 python3 "$S/tier2/patch_c8use.py" $T || exit 1
+python3 "/mnt/c/Users/Jess/Desktop/EDUKE32/Witchaven/build-tools/misterpad/unpatch_padnames.py" $T src/c8port.c || exit 1
 # CMake: the Witchaven list with the game's modules in place of Witchaven's
 python3 - $T <<'PY'
 import os, sys, re
@@ -53,6 +54,10 @@ s = s.replace('\tlibsmacker/smacker.c\n', '\tlibsmacker/smacker.c\n\n\t' + '\n\t
 open(os.path.join(t, 'CMakeLists.txt'), 'w').write(s)
 print('modules:', len(mods))
 PY
+python3 "/mnt/c/Users/Jess/Desktop/EDUKE32/Witchaven/build-tools/patch_dpadstrafe.py" $T/jfbuild || exit 1
+python3 "/mnt/c/Users/Jess/Desktop/EDUKE32/Witchaven/build-tools/patch_dpadstrafe_game.py" $T corr8 || exit 1
+# the crash reporter (mister_crash.c, 2026-11-19)
+cp "/mnt/c/Users/Jess/Desktop/EDUKE32/Witchaven/build-tools/mister_crash.c" $T/src/; grep -q mister_crash.c $T/CMakeLists.txt || sed -i "s|\tsrc/mister_port.c|\tsrc/mister_port.c\n\tsrc/mister_crash.c|" $T/CMakeLists.txt
 R=~/ionfury/EDuke32_MiSTer; PREFIX=$R/build/sdl/mister/prefix
 BT=Release; CF="-funwind-tables -fno-omit-frame-pointer"; [ -n "$C8DEBUG" ] && { BT=Debug; CF="-O0 -fno-omit-frame-pointer -funwind-tables -g"; }
 cmake -S $T -B $T/build -DCMAKE_BUILD_TYPE=$BT "-DCMAKE_C_FLAGS=$CF" -DCMAKE_TOOLCHAIN_FILE=$R/hybrid/toolchain/mister.cmake -DCMAKE_FIND_ROOT_PATH=$PREFIX -DCMAKE_PREFIX_PATH=$PREFIX -DMISTER_HYBRID=ON "-DCMAKE_EXE_LINKER_FLAGS=-no-pie -static-libgcc" > $T/cmake.log 2>&1 || { tail -5 $T/cmake.log; exit 1; }
